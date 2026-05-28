@@ -1,0 +1,18 @@
+# macOS clutter
+.DS_Store
+
+# Mathematica auto-saved sidecar files
+*.nb~
+*.nb.bak
+
+# Wolfram Player / kernel caches
+*.fp
+.WolframEphemeral/
+
+# Backups people sometimes leave alongside notebooks while editing
+*.backup-*.nb
+
+# Local-only data: a Mosaic .npz forecast is 95 MB+ and must not ship.
+# (Readers supply their own; see README.)
+*.npz
+data_local/
