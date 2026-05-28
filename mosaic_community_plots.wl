@@ -359,7 +359,7 @@ mcpFigBias[data_Association] := Module[
     Frame -> True, FrameLabel -> {None, "Bias (variable units)"},
     PlotLabel -> Style[
       "Per-(variable, city) bias \[LongDash] sign + magnitude", 12],
-    ImageSize -> 900, Background -> White]];
+    ImageSize -> 720, Background -> White]];
 
 mcpFigRadar[data_Association] := Module[
   {variableList=data["variableList"], cityList=data["cityList"],
@@ -445,12 +445,12 @@ mcpRenderGlobal[field2D_, title_, range_,
                     {Style["Latitude (\[Degree])", 10], None}},
      PlotLegends -> BarLegend[{cf, {vMin, vMax}},
         LegendLabel -> legendLabel, LegendMarkerSize -> {12, 180}],
-     AspectRatio -> 1/2, ImageSize -> 1400];
+     AspectRatio -> 1/2, ImageSize -> 720];
   coastPrim = {Black, AbsoluteThickness[0.55], Line /@ coastlines};
   coast = Graphics[coastPrim,
      PlotRange -> {{-180, 180}, {-90, 90}}, AspectRatio -> 1/2];
   Show[heatmap, coast,
-     PlotLabel -> Style[title, 14, Bold], ImageSize -> 1400]];
+     PlotLabel -> Style[title, 14, Bold], ImageSize -> 720]];
 
 (* Helper used by all .npz figures: load tensor + axes once, return Association. *)
 loadGlobal[npzPath_String] := Module[{d, viT, lon, lat, mean, spread},
@@ -523,7 +523,7 @@ mcpFigHov50N[npzPath_String] := Module[
     PlotLegends -> BarLegend[
        {ColorData[{"TemperatureMap", hRange}], hRange},
        LegendLabel -> "2 m T (\[Degree]C)", LegendMarkerSize -> {12, 200}],
-    AspectRatio -> 0.6, ImageSize -> 1100]];
+    AspectRatio -> 0.6, ImageSize -> 720]];
 
 mcpAnimateGlobal[npzPath_, varName_String:"2m_temperature",
                  outGif_String:"global.gif"] /; !FileExistsQ[npzPath] :=
