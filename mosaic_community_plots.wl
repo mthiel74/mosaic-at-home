@@ -391,6 +391,34 @@ mcpFigRadar[data_Association] := Module[
        LegendMarkerSize -> 15, LegendLabel -> Style["City", Bold]], Right]]];
 
 (* ============================================================================
+   Graceful "you need an .npz" notice. Each public function that takes an
+   npzPath checks FileExistsQ first; if the path is the placeholder (or any
+   non-existent file) we return this Pane instead of letting ExtractArchive
+   blow up. That way "Evaluate Notebook" runs cleanly even before the reader
+   has pointed npzPath at a real Mosaic forecast.
+   ============================================================================ *)
+needNpz[funcName_String, given_] := Pane[
+  Column[{
+    Style["Need a Mosaic .npz", Bold, FontSize -> 14,
+       RGBColor[0.65, 0.1, 0.1]],
+    Spacer[4],
+    Row[{Style["Path tried:  ", Italic, GrayLevel[0.4]],
+         Style[ToString[given], FontFamily -> "Courier",
+            FontColor -> GrayLevel[0.25]]}],
+    Spacer[2],
+    Style[funcName <> " needs a Mosaic forecast .npz on local disk.",
+       GrayLevel[0.2]],
+    Style["Set npzPath at the top of the notebook to your file, then \
+re-evaluate this cell.", GrayLevel[0.2]],
+    Spacer[2],
+    Style["(See section 2 of the post, or the repo README, for how to \
+produce a .npz on Colab.)", Italic, FontSize -> 11, GrayLevel[0.45]]},
+    Spacings -> 0.7],
+  ImageMargins -> 6,
+  FrameMargins -> 14,
+  Background -> RGBColor[1.0, 0.97, 0.90]];
+
+(* ============================================================================
    FIGURES 09-12 -- global temperature maps + Hovmoller (need a Mosaic .npz)
    ============================================================================ *)
 
@@ -438,6 +466,8 @@ loadGlobal[npzPath_String] := Module[{d, viT, lon, lat, mean, spread},
 defaultCoastlines[] := If[FileExistsQ[defaultCoastFile[]],
    Get[defaultCoastFile[]], {}];
 
+mcpFig3PanelGlobal[npzPath_] /; !FileExistsQ[npzPath] :=
+   needNpz["mcpFig3PanelGlobal", npzPath];
 mcpFig3PanelGlobal[npzPath_String] := Module[
   {g = loadGlobal[npzPath], coast = defaultCoastlines[], panel},
   panel[d_] := mcpRenderGlobal[g["ensembleMean"][[d]],
@@ -447,6 +477,8 @@ mcpFig3PanelGlobal[npzPath_String] := Module[
   Column[{panel[1], panel[5], panel[10]},
      Spacings -> 0.3, Alignment -> Center]];
 
+mcpFigGlobalSpread[npzPath_, day_Integer:5] /; !FileExistsQ[npzPath] :=
+   needNpz["mcpFigGlobalSpread", npzPath];
 mcpFigGlobalSpread[npzPath_String, day_Integer:5] := Module[
   {g = loadGlobal[npzPath], coast = defaultCoastlines[], sRange},
   sRange = {0, Quantile[Flatten[g["ensembleSpread"][[day]]], 0.99]};
@@ -456,6 +488,8 @@ mcpFigGlobalSpread[npzPath_String, day_Integer:5] := Module[
      sRange, "SunsetColors", "\[Sigma] 2 m T (\[Degree]C)",
      g["lon"], g["lat"], coast]];
 
+mcpFigGlobalAnomaly[npzPath_] /; !FileExistsQ[npzPath] :=
+   needNpz["mcpFigGlobalAnomaly", npzPath];
 mcpFigGlobalAnomaly[npzPath_String] := Module[
   {g = loadGlobal[npzPath], coast = defaultCoastlines[], anomaly, aMax},
   anomaly = g["ensembleMean"][[10]] - g["ensembleMean"][[1]];
@@ -466,6 +500,8 @@ mcpFigGlobalAnomaly[npzPath_String] := Module[
      "\[CapitalDelta] 2 m T (\[Degree]C)",
      g["lon"], g["lat"], coast]];
 
+mcpFigHov50N[npzPath_] /; !FileExistsQ[npzPath] :=
+   needNpz["mcpFigHov50N", npzPath];
 mcpFigHov50N[npzPath_String] := Module[
   {g = loadGlobal[npzPath], i50, hov, sortedLon, order, hovSorted, hRange},
   i50 = First @ Ordering[Abs[g["lat"] - 50], 1];
@@ -489,6 +525,9 @@ mcpFigHov50N[npzPath_String] := Module[
        LegendLabel -> "2 m T (\[Degree]C)", LegendMarkerSize -> {12, 200}],
     AspectRatio -> 0.6, ImageSize -> 1100]];
 
+mcpAnimateGlobal[npzPath_, varName_String:"2m_temperature",
+                 outGif_String:"global.gif"] /; !FileExistsQ[npzPath] :=
+   needNpz["mcpAnimateGlobal", npzPath];
 mcpAnimateGlobal[npzPath_String, varName_String:"2m_temperature",
                  outGif_String:"global.gif"] := Module[
   {d, vi, ens, lonArr, latArr, leadH, field, vMin, vMax, frames},
@@ -518,6 +557,9 @@ mcpAnimateGlobal[npzPath_String, varName_String:"2m_temperature",
      "AnimationRepetitions" -> Infinity, "DisplayDurations" -> 0.6];
   frames];
 
+mcpAnimateEnsembleMean[npzPath_, outGif_String:"global.gif"] /;
+   !FileExistsQ[npzPath] :=
+   needNpz["mcpAnimateEnsembleMean", npzPath];
 mcpAnimateEnsembleMean[npzPath_String, outGif_String:"global.gif"] := Module[
   {g = loadGlobal[npzPath], coast = defaultCoastlines[], frames},
   frames = Table[mcpRenderGlobal[g["ensembleMean"][[d]],
@@ -552,6 +594,8 @@ loadGlobalWithTruth[npzPath_String] := Module[
 
 nearestIdx[arr_, x_] := First @ Ordering[Abs[arr - x], 1];
 
+mcpFigAberdeenCompare[npzPath_] /; !FileExistsQ[npzPath] :=
+   needNpz["mcpFigAberdeenCompare", npzPath];
 mcpFigAberdeenCompare[npzPath_String] := Module[
   {g = loadGlobalWithTruth[npzPath], li, lj, abMembers, abMean, abTruth,
    obs, obsPts, memberSeries, seriesAll, n2, n3, nMem, viT},
@@ -596,6 +640,8 @@ $cityCoordsDefault = {
    "Berlin"   -> {52.52, 13.40}, "New York" -> {40.71, -74.00},
    "Phoenix"  -> {33.45,-112.07}, "Tokyo"   -> {35.68, 139.65}};
 
+mcpFigSkillVsLead[npzPath_, cities_:$cityCoordsDefault] /;
+   !FileExistsQ[npzPath] := needNpz["mcpFigSkillVsLead", npzPath];
 mcpFigSkillVsLead[npzPath_String, cities_:$cityCoordsDefault] := Module[
   {g = loadGlobalWithTruth[npzPath], cityNames, cityCol, leadDays, err, viT},
   viT = g["viT"];
@@ -616,6 +662,8 @@ mcpFigSkillVsLead[npzPath_String, cities_:$cityCoordsDefault] := Module[
     PlotLabel -> "Per-city 2 m T error vs lead time (init 2022-08-15)",
     GridLines -> Automatic, Frame -> True, ImageSize -> 760]];
 
+mcpFigCrpsVsLead[npzPath_] /; !FileExistsQ[npzPath] :=
+   needNpz["mcpFigCrpsVsLead", npzPath];
 mcpFigCrpsVsLead[npzPath_String] := Module[
   {g = loadGlobalWithTruth[npzPath], nMem, nStep, viT, crpsLead},
   nMem = g["nMem"]; nStep = g["nStep"]; viT = g["viT"];
@@ -636,6 +684,8 @@ mcpFigCrpsVsLead[npzPath_String] := Module[
     PlotLabel -> "Global-mean CRPS of 2 m T ensemble vs lead time",
     GridLines -> Automatic, Frame -> True, ImageSize -> 760]];
 
+mcpFigSkillPersistence[npzPath_] /; !FileExistsQ[npzPath] :=
+   needNpz["mcpFigSkillPersistence", npzPath];
 mcpFigSkillPersistence[npzPath_String] := Module[
   {g = loadGlobalWithTruth[npzPath], nStep, viT, rmseGrid, ensMeanT,
    truthDay1, ssLead},
@@ -656,6 +706,8 @@ mcpFigSkillPersistence[npzPath_String] := Module[
     PlotLabel -> "2 m T skill score over day-1 persistence (positive = beats persistence)",
     GridLines -> Automatic, Frame -> True, ImageSize -> 760]];
 
+mcpFigRankHistogram[npzPath_] /; !FileExistsQ[npzPath] :=
+   needNpz["mcpFigRankHistogram", npzPath];
 mcpFigRankHistogram[npzPath_String] := Module[
   {g = loadGlobalWithTruth[npzPath], nMem, nStep, viT, ranks},
   nMem = g["nMem"]; nStep = g["nStep"]; viT = g["viT"];
@@ -672,6 +724,8 @@ mcpFigRankHistogram[npzPath_String] := Module[
     PlotLabel  -> "Rank histogram (Talagrand) \[LongDash] U-shape = under-dispersive",
     ImageSize  -> 760]];
 
+mcpFigHovLatLead[npzPath_] /; !FileExistsQ[npzPath] :=
+   needNpz["mcpFigHovLatLead", npzPath];
 mcpFigHovLatLead[npzPath_String] := Module[
   {g = loadGlobalWithTruth[npzPath], nStep, nLat, viT,
    ensMeanT, errLatTime, hovMat},
